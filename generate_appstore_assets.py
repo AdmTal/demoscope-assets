@@ -171,49 +171,181 @@ COPY = {
 
 
 # ─────────────────────────────────────────────
-# TELEPROMPTER SAMPLE TEXT  (shown on-screen)
+# TELEPROMPTER SAMPLE TEXT  (per-clip, per-language)
+#   woman_1 → Business / entrepreneurship coach
+#   man_1   → Online educator / course creator
+#   woman_2 → Fitness / wellness coach
+#   man_2   → Tech podcaster / reviewer
 # ─────────────────────────────────────────────
 PROMPTER_TEXT = {
-    "en-US": [
-        "that resonates with your audience.",
-        "Now let me share three proven tips",
-        "for creating content that converts…",
-    ],
-    "fr": [
-        "qui touche vraiment votre audience.",
-        "Laissez-moi partager trois astuces",
-        "pour créer du contenu engageant…",
-    ],
-    "de": [
-        "die Ihr Publikum wirklich anspricht.",
-        "Lassen Sie mich drei bewährte Tipps",
-        "für fesselnde Inhalte teilen…",
-    ],
-    "ja": [
-        "視聴者の心に響くコンテンツを。",
-        "では3つの実践的なヒントを",
-        "ご紹介します。まずは…",
-    ],
-    "ko": [
-        "시청자에게 와닿는 콘텐츠를.",
-        "지금부터 세 가지 핵심 팁을",
-        "공유하겠습니다. 먼저…",
-    ],
-    "zh-Hans": [
-        "真正打动观众的内容。",
-        "现在分享三个实用技巧，",
-        "帮助你创作更好的内容…",
-    ],
-    "zh-Hant": [
-        "真正打動觀眾的內容。",
-        "現在分享三個實用技巧，",
-        "幫助你創作更好的內容…",
-    ],
-    "pt-BR": [
-        "que ressoa com seu público.",
-        "Agora vou compartilhar três dicas",
-        "para criar conteúdo engajante…",
-    ],
+    "woman_1": {
+        "en-US": [
+            "and that's why a strong brand identity",
+            "matters more than ever. Let me share",
+            "my top three strategies for growth…",
+        ],
+        "fr": [
+            "et c'est pourquoi une identité de marque",
+            "compte plus que jamais. Laissez-moi",
+            "partager mes trois stratégies de croissance…",
+        ],
+        "de": [
+            "und deshalb ist eine starke Markenidentität",
+            "wichtiger denn je. Lassen Sie mich",
+            "drei Wachstumsstrategien teilen…",
+        ],
+        "ja": [
+            "だからこそ強いブランドが",
+            "今まで以上に重要なのです。では",
+            "成長戦略を3つご紹介します…",
+        ],
+        "ko": [
+            "그래서 강력한 브랜드 정체성이",
+            "그 어느 때보다 중요합니다.",
+            "성장 전략 세 가지를 공유할게요…",
+        ],
+        "zh-Hans": [
+            "这就是为什么强大的品牌形象",
+            "比以往任何时候都更重要。",
+            "让我分享三个增长策略…",
+        ],
+        "zh-Hant": [
+            "這就是為什麼強大的品牌形象",
+            "比以往任何時候都更重要。",
+            "讓我分享三個增長策略…",
+        ],
+        "pt-BR": [
+            "e é por isso que uma identidade de marca",
+            "importa mais do que nunca. Vou",
+            "compartilhar três estratégias de crescimento…",
+        ],
+    },
+    "man_1": {
+        "en-US": [
+            "the key to effective lesson design",
+            "is breaking concepts into smaller steps.",
+            "Let me walk you through an example…",
+        ],
+        "fr": [
+            "la clé d'un cours efficace, c'est",
+            "de découper les concepts en étapes.",
+            "Voyons un exemple concret…",
+        ],
+        "de": [
+            "der Schlüssel zu gutem Unterricht",
+            "ist es, Konzepte aufzuteilen.",
+            "Schauen wir uns ein Beispiel an…",
+        ],
+        "ja": [
+            "効果的なレッスン設計の鍵は",
+            "概念を小さなステップに分けること。",
+            "具体例を見ていきましょう…",
+        ],
+        "ko": [
+            "효과적인 수업 설계의 핵심은",
+            "개념을 작은 단계로 나누는 것입니다.",
+            "예시를 함께 살펴볼까요…",
+        ],
+        "zh-Hans": [
+            "有效课程设计的关键",
+            "是将概念拆分为小步骤。",
+            "让我们看一个具体的例子…",
+        ],
+        "zh-Hant": [
+            "有效課程設計的關鍵",
+            "是將概念拆分為小步驟。",
+            "讓我們看一個具體的例子…",
+        ],
+        "pt-BR": [
+            "a chave para um ensino eficaz é",
+            "dividir conceitos em etapas menores.",
+            "Vamos ver um exemplo prático…",
+        ],
+    },
+    "woman_2": {
+        "en-US": [
+            "your form is everything. Keep your core",
+            "engaged and shoulders back. Now let's",
+            "move into our next set of reps…",
+        ],
+        "fr": [
+            "la posture est primordiale. Gardez les",
+            "abdos engagés, épaules en arrière.",
+            "Passons à la série suivante…",
+        ],
+        "de": [
+            "die Haltung ist alles. Bauchmuskeln",
+            "anspannen, Schultern zurück. Weiter",
+            "zur nächsten Übungsreihe…",
+        ],
+        "ja": [
+            "フォームがすべてです。体幹を",
+            "意識して肩を引いてください。",
+            "次のセットに移りましょう…",
+        ],
+        "ko": [
+            "자세가 전부입니다. 코어에 힘주고",
+            "어깨를 뒤로 당기세요. 자, 이제",
+            "다음 세트로 넘어갈게요…",
+        ],
+        "zh-Hans": [
+            "姿势是关键。保持核心收紧，",
+            "肩膀向后打开。现在",
+            "我们进入下一组训练…",
+        ],
+        "zh-Hant": [
+            "姿勢是關鍵。保持核心收緊，",
+            "肩膀向後打開。現在",
+            "我們進入下一組訓練…",
+        ],
+        "pt-BR": [
+            "a postura é tudo. Mantenha o core",
+            "ativado e os ombros para trás.",
+            "Vamos para a próxima série…",
+        ],
+    },
+    "man_2": {
+        "en-US": [
+            "and that's what makes this chip so fast.",
+            "But the real question is whether",
+            "it justifies the price. Let's find out…",
+        ],
+        "fr": [
+            "et c'est ce qui rend cette puce rapide.",
+            "Mais la vraie question est de savoir",
+            "si le prix est justifié. Analysons ça…",
+        ],
+        "de": [
+            "und das macht diesen Chip so schnell.",
+            "Aber die eigentliche Frage ist, ob",
+            "der Preis gerechtfertigt ist…",
+        ],
+        "ja": [
+            "このチップが高速な理由はそこです。",
+            "しかし本当の疑問は、この",
+            "価格に見合うかどうかです…",
+        ],
+        "ko": [
+            "그게 이 칩이 빠른 이유입니다.",
+            "하지만 진짜 질문은",
+            "가격 대비 가치가 있는가입니다…",
+        ],
+        "zh-Hans": [
+            "这就是这颗芯片如此快的原因。",
+            "但真正的问题是，",
+            "它的价格是否值得…",
+        ],
+        "zh-Hant": [
+            "這就是這顆晶片如此快的原因。",
+            "但真正的問題是，",
+            "它的價格是否值得…",
+        ],
+        "pt-BR": [
+            "e é isso que torna este chip tão rápido.",
+            "Mas a verdadeira pergunta é se",
+            "o preço se justifica. Vamos analisar…",
+        ],
+    },
 }
 
 
@@ -380,7 +512,7 @@ def draw_text_with_shadow(canvas, pos, text, font,
 # PHONE MOCKUP & TELEPROMPTER
 # ─────────────────────────────────────────────
 
-def create_screen_content(video_frame, screen_w, screen_h, lang):
+def create_screen_content(video_frame, screen_w, screen_h, lang, clip):
     """Build screen content: video scaled to width + teleprompter overlay below."""
     scale = screen_w / video_frame.width
     vid_w = screen_w
@@ -391,30 +523,30 @@ def create_screen_content(video_frame, screen_w, screen_h, lang):
     screen = Image.new("RGBA", (screen_w, screen_h), (0, 0, 0, 255))
     screen.paste(scaled.convert("RGBA"), (0, 0))
 
-    screen = add_teleprompter_overlay(screen, vid_h, lang)
+    screen = add_teleprompter_overlay(screen, vid_h, lang, clip)
     return screen
 
 
-def add_teleprompter_overlay(screen, video_bottom, lang):
-    """Overlay a teleprompter UI at the bottom of the screen."""
+def add_teleprompter_overlay(screen, video_bottom, lang, clip):
+    """Overlay a teleprompter UI centred at the vertical midpoint."""
     w, h = screen.size
 
-    overlay_top = int(h * 0.52)
-    overlay_h = h - overlay_top
+    # Full-screen Gaussian overlay — peaks at vertical midpoint, no hard edges
+    import math
+    center = 0.50          # peak at screen midpoint
+    sigma = 0.22           # controls how wide the darkening spreads
+    peak_alpha = 130       # max darkness at center
 
-    col = Image.new("RGBA", (1, overlay_h))
-    for y in range(overlay_h):
-        t = y / max(overlay_h - 1, 1)
-        alpha = int(195 * (t ** 0.55))
+    col = Image.new("RGBA", (1, h))
+    for y in range(h):
+        t = y / max(h - 1, 1)
+        alpha = int(peak_alpha * math.exp(-0.5 * ((t - center) / sigma) ** 2))
         col.putpixel((0, y), (0, 0, 0, alpha))
-    overlay = col.resize((w, overlay_h), Image.NEAREST)
-
-    olayer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    olayer.paste(overlay, (0, overlay_top))
-    screen = Image.alpha_composite(screen, olayer)
+    overlay = col.resize((w, h), Image.NEAREST)
+    screen = Image.alpha_composite(screen, overlay)
 
     draw = ImageDraw.Draw(screen)
-    lines = PROMPTER_TEXT[lang]
+    lines = PROMPTER_TEXT[clip][lang]
 
     base_sz = int(h * 0.022)
     active_sz = int(h * 0.027)
@@ -423,25 +555,26 @@ def add_teleprompter_overlay(screen, video_bottom, lang):
     active_font = get_font(lang, active_sz)
 
     cx = w // 2
-    text_top = int(h * 0.69)
     line_gap = int(h * 0.058)
+    # Centre the active line (line 1) at the vertical midpoint
+    text_top = h // 2 - line_gap
 
     for i, line in enumerate(lines):
         y = text_top + i * line_gap
         if i == 1:
             draw.text((cx, y), line, font=active_font,
-                      fill=(255, 255, 255, 255), anchor="mm", align="center")
+                      fill=(255, 255, 255, 175), anchor="mm", align="center")
             bbox = draw.textbbox((cx, y), line, font=active_font, anchor="mm")
             bar_x = bbox[0] - int(w * 0.025)
             bar_w = max(int(w * 0.006), 3)
             draw.rounded_rectangle(
                 [(bar_x, bbox[1] + 2), (bar_x + bar_w, bbox[3] - 2)],
                 radius=bar_w // 2,
-                fill=(255, 255, 255, 220),
+                fill=(255, 255, 255, 130),
             )
         else:
             draw.text((cx, y), line, font=line_font,
-                      fill=(255, 255, 255, 100), anchor="mm", align="center")
+                      fill=(255, 255, 255, 55), anchor="mm", align="center")
 
     return screen
 
@@ -561,7 +694,7 @@ def make_card(frame, cw, ch, clip, lang, clip_idx):
     screen_h = phone_h - 2 * bezel
 
     # 5. Screen content (video + teleprompter)
-    screen = create_screen_content(frame, screen_w, screen_h, lang)
+    screen = create_screen_content(frame, screen_w, screen_h, lang, clip)
 
     # 6. Phone mockup with colored border
     border_color = c1
