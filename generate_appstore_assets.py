@@ -10,8 +10,8 @@ Usage:
 
 Output:
     AppStoreAssets/
-      iPhone/<lang>/  (16 images per language: 4 clips × 4 sizes)
-      iPad/<lang>/    (16 images per language: 4 clips × 4 sizes)
+      iPhone/<lang>/  (4 images per language: 4 clips × 1 size)
+      iPad/<lang>/    (4 images per language: 4 clips × 1 size)
 """
 
 import subprocess
@@ -31,21 +31,21 @@ CLIPS = ["woman_1", "man_1", "woman_2", "man_2"]
 
 
 # ─────────────────────────────────────────────
+# FRAME TIMESTAMPS  (min:sec to grab from each video)
+# ─────────────────────────────────────────────
+FRAME_TIMESTAMPS = {
+    "woman_1": "0:01",
+    "man_1":   "0:01",
+    "woman_2": "0:01",
+    "man_2":   "0:01",
+}
+
+
+# ─────────────────────────────────────────────
 # APP STORE SCREENSHOT SIZES
 # ─────────────────────────────────────────────
-IPHONE_SIZES = [
-    (1242, 2688),   # 6.5" portrait
-    (2688, 1242),   # 6.5" landscape
-    (1284, 2778),   # 6.7" portrait
-    (2778, 1284),   # 6.7" landscape
-]
-
-IPAD_SIZES = [
-    (2064, 2752),   # 12.9" 6th gen portrait
-    (2752, 2064),   # 12.9" 6th gen landscape
-    (2048, 2732),   # 12.9" 3rd gen portrait
-    (2732, 2048),   # 12.9" 3rd gen landscape
-]
+IPHONE_SIZE = (1284, 2778)    # 6.7" portrait
+IPAD_SIZE   = (2064, 2752)    # 12.9" 6th gen portrait
 
 
 # ─────────────────────────────────────────────
@@ -59,8 +59,9 @@ BG_GRADIENTS = {
     "man_2":   ((245, 158, 11),  (252, 196, 55)),     # Amber
 }
 
-TEXT_FILL = (255, 255, 255)      # White
-TEXT_STROKE = (13, 27, 42)       # Dark navy
+TEXT_FILL = (255, 255, 255)           # White
+TEXT_STROKE = (13, 27, 42)            # Dark navy
+PILL_COLOR = (13, 27, 42, 100)       # Semi-transparent dark pill behind text
 
 
 # ─────────────────────────────────────────────
@@ -186,11 +187,13 @@ def detect_cjk_indices():
     print(f"  CJK font indices detected: {CJK_INDICES}")
 
 
-def extract_first_frame(video_path):
-    """Extract the first frame from a video as a PIL Image."""
+def extract_frame(video_path, timestamp="0:00"):
+    """Extract a frame at the given min:sec timestamp as a PIL Image."""
     tmp = video_path + ".tmp_frame.png"
     cmd = [
-        "ffmpeg", "-y", "-i", video_path,
+        "ffmpeg", "-y",
+        "-ss", timestamp,
+        "-i", video_path,
         "-vframes", "1", "-q:v", "1", tmp,
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -251,14 +254,23 @@ def get_font(lang, size):
     return ImageFont.truetype(LATIN_FONT, size)
 
 
+def draw_text_pill(draw, bbox, pad_x, pad_y, radius, fill):
+    """Draw a rounded-rect pill behind a text bounding box."""
+    x0 = bbox[0] - pad_x
+    y0 = bbox[1] - pad_y
+    x1 = bbox[2] + pad_x
+    y1 = bbox[3] + pad_y
+    draw.rounded_rectangle([(x0, y0), (x1, y1)], radius=radius, fill=fill)
+
+
 # ─────────────────────────────────────────────
-# CARD GENERATORS
+# CARD GENERATOR
 # ─────────────────────────────────────────────
 
-def make_portrait_card(frame, cw, ch, clip, lang, clip_idx):
+def make_card(frame, cw, ch, clip, lang, clip_idx):
     """
     Portrait layout:
-      - Top ~20%: tagline + subtitle (centered)
+      - Top area: tagline + subtitle on semi-transparent pill
       - Bottom ~80%: screenshot with rounded corners & shadow
     """
     c1, c2 = BG_GRADIENTS[clip]
@@ -267,9 +279,9 @@ def make_portrait_card(frame, cw, ch, clip, lang, clip_idx):
     canvas = gradient_bg(cw, ch, c1, c2)
 
     # --- Screenshot placement (lower 4/5) ---
-    pad_x = int(cw * 0.05)
-    pad_bot = int(ch * 0.015)
-    min_top_gap = int(ch * 0.20)
+    pad_x = int(cw * 0.04)
+    pad_bot = int(ch * 0.012)
+    min_top_gap = int(ch * 0.22)
 
     avail_w = cw - 2 * pad_x
     avail_h = ch - min_top_gap - pad_bot
@@ -284,108 +296,70 @@ def make_portrait_card(frame, cw, ch, clip, lang, clip_idx):
     img_x = (cw - fw) // 2
     img_y = ch - fh - pad_bot
 
-    shadow_off = max(int(cw * 0.006), 5)
-    shadow_blur = max(int(cw * 0.014), 10)
+    shadow_off = max(int(cw * 0.005), 4)
+    shadow_blur = max(int(cw * 0.012), 8)
     canvas = composite_with_shadow(canvas, rounded, (img_x, img_y),
                                    offset=shadow_off, blur=shadow_blur)
 
-    # --- Text ---
-    draw = ImageDraw.Draw(canvas)
+    # --- Text with pill background ---
+    # We draw on an RGBA overlay so the pill can be semi-transparent
+    overlay = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
 
-    tag_size = int(ch * 0.034)
-    sub_size = int(ch * 0.019)
-    tag_stroke = max(int(tag_size * 0.14), 3)
-    sub_stroke = max(int(sub_size * 0.12), 2)
+    tag_size = int(ch * 0.038)
+    sub_size = int(ch * 0.020)
+    tag_stroke = max(int(tag_size * 0.08), 2)
+    sub_stroke = max(int(sub_size * 0.06), 1)
 
     tag_font = get_font(lang, tag_size)
     sub_font = get_font(lang, sub_size)
 
-    # Center text vertically in the gap above the screenshot
+    # Vertically center the full text block in the gap above the screenshot
+    tag_bbox_test = draw.textbbox((0, 0), tagline, font=tag_font, anchor="la")
+    sub_bbox_test = draw.textbbox((0, 0), subtitle, font=sub_font, anchor="la")
+    tag_h = tag_bbox_test[3] - tag_bbox_test[1]
+    sub_h = sub_bbox_test[3] - sub_bbox_test[1]
+    gap_between = int(ch * 0.012)
+    total_text_h = tag_h + gap_between + sub_h
+
+    text_block_top = (img_y - total_text_h) // 2
     text_cx = cw // 2
-    text_cy = int(img_y * 0.38)
+    tag_cy = text_block_top + tag_h // 2
+    sub_top = text_block_top + tag_h + gap_between
 
+    # Pill behind tagline
+    tag_bbox = draw.textbbox((text_cx, tag_cy), tagline,
+                             font=tag_font, anchor="mm")
+    pill_pad_x = int(cw * 0.04)
+    pill_pad_y = int(ch * 0.008)
+    pill_radius = int(ch * 0.012)
+    draw_text_pill(draw, tag_bbox, pill_pad_x, pill_pad_y,
+                   pill_radius, PILL_COLOR)
+
+    # Pill behind subtitle
+    sub_anchor_y = sub_top
+    sub_bbox = draw.textbbox((text_cx, sub_anchor_y), subtitle,
+                             font=sub_font, anchor="ma")
+    sub_pill_pad_x = int(cw * 0.03)
+    sub_pill_pad_y = int(ch * 0.005)
+    draw_text_pill(draw, sub_bbox, sub_pill_pad_x, sub_pill_pad_y,
+                   pill_radius, PILL_COLOR)
+
+    # Draw tagline text
     draw.text(
-        (text_cx, text_cy), tagline, font=tag_font,
+        (text_cx, tag_cy), tagline, font=tag_font,
         fill=TEXT_FILL, stroke_width=tag_stroke, stroke_fill=TEXT_STROKE,
         anchor="mm", align="center",
     )
 
-    tag_bbox = draw.textbbox((text_cx, text_cy), tagline,
-                             font=tag_font, anchor="mm")
-    sub_y = tag_bbox[3] + int(ch * 0.012)
-
+    # Draw subtitle text
     draw.text(
-        (text_cx, sub_y), subtitle, font=sub_font,
+        (text_cx, sub_anchor_y), subtitle, font=sub_font,
         fill=TEXT_FILL, stroke_width=sub_stroke, stroke_fill=TEXT_STROKE,
         anchor="ma", align="center",
     )
 
-    return canvas.convert("RGB")
-
-
-def make_landscape_card(frame, cw, ch, clip, lang, clip_idx):
-    """
-    Landscape layout:
-      - Left ~42%: tagline + subtitle (centered)
-      - Right ~58%: portrait screenshot (centered, with shadow)
-    """
-    c1, c2 = BG_GRADIENTS[clip]
-    tagline, subtitle = COPY[lang][clip_idx]
-
-    canvas = gradient_bg(cw, ch, c1, c2)
-
-    # --- Screenshot on the right ---
-    text_zone_w = int(cw * 0.42)
-    pad = int(ch * 0.06)
-
-    avail_w = cw - text_zone_w - 2 * pad
-    avail_h = ch - 2 * pad
-
-    scale = min(avail_w / frame.width, avail_h / frame.height)
-    fw = int(frame.width * scale)
-    fh = int(frame.height * scale)
-
-    scaled = frame.resize((fw, fh), Image.LANCZOS)
-    rounded = round_corners(scaled, int(min(fw, fh) * 0.03))
-
-    img_x = text_zone_w + (cw - text_zone_w - fw) // 2
-    img_y = (ch - fh) // 2
-
-    shadow_off = max(int(ch * 0.005), 4)
-    shadow_blur = max(int(ch * 0.012), 8)
-    canvas = composite_with_shadow(canvas, rounded, (img_x, img_y),
-                                   offset=shadow_off, blur=shadow_blur)
-
-    # --- Text on the left ---
-    draw = ImageDraw.Draw(canvas)
-
-    tag_size = int(ch * 0.07)
-    sub_size = int(ch * 0.038)
-    tag_stroke = max(int(tag_size * 0.14), 3)
-    sub_stroke = max(int(sub_size * 0.12), 2)
-
-    tag_font = get_font(lang, tag_size)
-    sub_font = get_font(lang, sub_size)
-
-    text_cx = text_zone_w // 2
-    text_cy = ch // 2 - int(ch * 0.07)
-
-    draw.text(
-        (text_cx, text_cy), tagline, font=tag_font,
-        fill=TEXT_FILL, stroke_width=tag_stroke, stroke_fill=TEXT_STROKE,
-        anchor="mm", align="center",
-    )
-
-    tag_bbox = draw.textbbox((text_cx, text_cy), tagline,
-                             font=tag_font, anchor="mm")
-    sub_y = tag_bbox[3] + int(ch * 0.03)
-
-    draw.text(
-        (text_cx, sub_y), subtitle, font=sub_font,
-        fill=TEXT_FILL, stroke_width=sub_stroke, stroke_fill=TEXT_STROKE,
-        anchor="ma", align="center",
-    )
-
+    canvas = Image.alpha_composite(canvas, overlay)
     return canvas.convert("RGB")
 
 
@@ -399,27 +373,29 @@ def main():
 
     detect_cjk_indices()
 
-    # --- Extract first frames ---
-    print("\n[1/3] Extracting first frames from portrait videos...")
+    # --- Extract frames ---
+    print("\n[1/3] Extracting frames from portrait videos...")
     frames = {}
     for clip in CLIPS:
         path = os.path.join(PORTRAIT_DIR, f"{clip}.mp4")
         if not os.path.exists(path):
             print(f"  SKIP: {path} not found")
             continue
-        frames[clip] = extract_first_frame(path)
-        print(f"  OK  {clip}: {frames[clip].size}")
+        ts = FRAME_TIMESTAMPS.get(clip, "0:00")
+        frames[clip] = extract_frame(path, ts)
+        print(f"  OK  {clip} @ {ts}: {frames[clip].size}")
 
     if not frames:
         sys.exit("ERROR: No frames extracted. Check Portrait/ directory.")
 
     # --- Generate all assets ---
-    total = len(frames) * len(LANGUAGES) * (len(IPHONE_SIZES) + len(IPAD_SIZES))
+    sizes = [("iPhone", IPHONE_SIZE), ("iPad", IPAD_SIZE)]
+    total = len(frames) * len(LANGUAGES) * len(sizes)
     count = 0
 
     print(f"\n[2/3] Generating {total} images...")
 
-    for device, sizes in [("iPhone", IPHONE_SIZES), ("iPad", IPAD_SIZES)]:
+    for device, (w, h) in sizes:
         for lang in LANGUAGES:
             out_dir = os.path.join(OUTPUT_DIR, device, lang)
             os.makedirs(out_dir, exist_ok=True)
@@ -429,21 +405,14 @@ def main():
                     continue
 
                 frame = frames[clip_name]
+                card = make_card(frame, w, h, clip_name, lang, clip_idx)
 
-                for w, h in sizes:
-                    is_portrait = h > w
+                fname = f"{clip_name}_{w}x{h}.png"
+                card.save(os.path.join(out_dir, fname), "PNG", optimize=True)
 
-                    if is_portrait:
-                        card = make_portrait_card(frame, w, h, clip_name, lang, clip_idx)
-                    else:
-                        card = make_landscape_card(frame, w, h, clip_name, lang, clip_idx)
-
-                    fname = f"{clip_name}_{w}x{h}.png"
-                    card.save(os.path.join(out_dir, fname), "PNG", optimize=True)
-
-                    count += 1
-                    if count % 32 == 0 or count == total:
-                        print(f"  Progress: {count}/{total}")
+                count += 1
+                if count % 16 == 0 or count == total:
+                    print(f"  Progress: {count}/{total}")
 
     # --- Summary ---
     print(f"\n[3/3] Done! Generated {count} images.")
