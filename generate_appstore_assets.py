@@ -217,21 +217,6 @@ PROMPTER_TEXT = {
 }
 
 
-# ─────────────────────────────────────────────
-# SOCIAL PROOF  (configurable — update to match real metrics)
-# ─────────────────────────────────────────────
-SOCIAL_PROOF = {
-    "en-US":   "★ 4.8  ·  Loved by 50K+ creators",
-    "fr":      "★ 4.8  ·  Adopté par 50K+ créateurs",
-    "de":      "★ 4.8  ·  Beliebt bei 50K+ Creatorn",
-    "ja":      "★ 4.8  ·  5万人以上のクリエイターに人気",
-    "ko":      "★ 4.8  ·  5만+ 크리에이터가 선택",
-    "zh-Hans": "★ 4.8  ·  深受5万+创作者喜爱",
-    "zh-Hant": "★ 4.8  ·  深受5萬+創作者喜愛",
-    "pt-BR":   "★ 4.8  ·  Amado por 50K+ criadores",
-}
-
-
 LANGUAGES = list(COPY.keys())
 
 
@@ -337,16 +322,14 @@ def draw_label_text(canvas, center_x, start_y, text, font,
         line = line.strip()
         if not line:
             continue
-        # Measure this line
-        bbox = draw.textbbox((center_x, y_cursor), line, font=font, anchor="ma")
-        lw = bbox[2] - bbox[0]
-        lh = bbox[3] - bbox[1]
+        # Measure actual pixel bbox for this line
+        bbox = draw.textbbox((center_x, y_cursor), line, font=font, anchor="mt")
 
-        # Dark block behind text
-        bx0 = center_x - lw // 2 - pad_x
-        by0 = y_cursor - pad_y
-        bx1 = center_x + lw // 2 + pad_x
-        by1 = y_cursor + lh + pad_y
+        # Dark block wraps the actual text bbox
+        bx0 = bbox[0] - pad_x
+        by0 = bbox[1] - pad_y
+        bx1 = bbox[2] + pad_x
+        by1 = bbox[3] + pad_y
         draw.rounded_rectangle(
             [(bx0, by0), (bx1, by1)],
             radius=block_radius,
@@ -355,7 +338,7 @@ def draw_label_text(canvas, center_x, start_y, text, font,
 
         # Text on top of block
         draw.text((center_x, y_cursor), line, font=font,
-                  fill=text_fill, anchor="ma")
+                  fill=text_fill, anchor="mt")
 
         y_cursor = by1 + line_gap
 
@@ -533,45 +516,45 @@ def make_card(frame, cw, ch, clip, lang, clip_idx):
     tag_font = get_font(lang, tag_size)
 
     label_pad_x = int(cw * 0.030)
-    label_pad_y = int(ch * 0.006)
+    label_pad_y = int(ch * 0.008)
     label_radius = int(ch * 0.008)
     label_gap = int(ch * 0.005)
 
-    tag_start_y = int(ch * 0.045)
+    tag_start_y = int(ch * 0.040)
     canvas, tag_bottom_y = draw_label_text(
         canvas, cw // 2, tag_start_y, tagline, tag_font,
         pad_x=label_pad_x, pad_y=label_pad_y,
         block_radius=label_radius, line_gap=label_gap,
     )
 
-    # 3. Subtitle — small, clean, drop-shadow text below the labels
-    sub_size = int(ch * 0.016)
+    # 3. Subtitle — 2x size, auto-fit to card width
+    sub_size = int(ch * 0.032)
     sub_font = get_font(lang, sub_size)
-    sub_y = tag_bottom_y + int(ch * 0.006)
+    max_sub_w = int(cw * 0.90)
+    _tmp_d = ImageDraw.Draw(canvas)
+    _sub_bb = _tmp_d.textbbox((0, 0), subtitle, font=sub_font)
+    _sub_tw = _sub_bb[2] - _sub_bb[0]
+    if _sub_tw > max_sub_w:
+        sub_size = int(sub_size * max_sub_w / _sub_tw)
+        sub_font = get_font(lang, sub_size)
+    sub_y = tag_bottom_y + int(ch * 0.005)
 
     canvas = draw_text_with_shadow(
         canvas, (cw // 2, sub_y), subtitle, sub_font,
-        fill=(255, 255, 255, 200),
-        shadow_offset=(0, 2), shadow_blur=5,
+        fill=(255, 255, 255, 220),
+        shadow_offset=(0, 3), shadow_blur=6,
         anchor="ma", align="center",
     )
 
     # Measure subtitle bottom for phone placement
     _d = ImageDraw.Draw(canvas)
     sub_bb = _d.textbbox((cw // 2, sub_y), subtitle, font=sub_font, anchor="ma")
-    content_bottom = sub_bb[3] + int(ch * 0.015)
+    content_bottom = sub_bb[3] + int(ch * 0.018)
 
-    # 4. Phone dimensions — fill remaining space generously
-    bottom_margin = int(ch * 0.035)
-    avail_phone_h = ch - content_bottom - bottom_margin
-
-    phone_h = avail_phone_h
-    phone_w = int(phone_h / PHONE_ASPECT)
-
-    # Clamp phone width to 88% of card
-    if phone_w > int(cw * 0.88):
-        phone_w = int(cw * 0.88)
-        phone_h = int(phone_w * PHONE_ASPECT)
+    # 4. Phone dimensions — wide, bleeds off bottom by ~25%
+    #    Width: 92% of card (capped at 45% of card height for iPad)
+    phone_w = int(min(cw * 0.92, ch * 0.45))
+    phone_h = int(phone_w * PHONE_ASPECT)
 
     bezel = max(int(phone_w * PHONE_BEZEL_PCT), 4)
     screen_w = phone_w - 2 * bezel
@@ -581,35 +564,18 @@ def make_card(frame, cw, ch, clip, lang, clip_idx):
     screen = create_screen_content(frame, screen_w, screen_h, lang)
 
     # 6. Phone mockup with colored border
-    border_color = c1  # Use gradient's primary color
+    border_color = c1
     phone = build_phone_mockup(screen, phone_w, phone_h, bezel, border_color)
 
-    # 7. Position phone (centred, below text)
-    total_phone_w = phone.width
-    total_phone_h = phone.height
-    phone_x = (cw - total_phone_w) // 2
+    # 7. Position phone — centred, gap below subtitle, bottom bleeds off card
+    phone_x = (cw - phone.width) // 2
     phone_y = content_bottom
 
-    # If phone extends past bottom, that's fine — it gets clipped
-    # Composite with shadow
     shadow_off = max(int(cw * 0.004), 3)
-    shadow_blur = max(int(cw * 0.012), 10)
+    shadow_blur_sz = max(int(cw * 0.012), 10)
     canvas = composite_with_shadow(canvas, phone, (phone_x, phone_y),
-                                   offset=shadow_off, blur=shadow_blur, opacity=50)
-
-    # 8. Social proof — tucked at the very bottom
-    proof = SOCIAL_PROOF[lang]
-    proof_sz = int(ch * 0.013)
-    proof_font = get_font(lang, proof_sz)
-    proof_y = ch - int(ch * 0.015)
-
-    canvas = draw_text_with_shadow(
-        canvas, (cw // 2, proof_y), proof, proof_font,
-        fill=(255, 255, 255, 170),
-        shadow_color=(0, 0, 0, 60),
-        shadow_offset=(0, 2), shadow_blur=4,
-        anchor="mm", align="center",
-    )
+                                   offset=shadow_off, blur=shadow_blur_sz,
+                                   opacity=50)
 
     return canvas.convert("RGB")
 
