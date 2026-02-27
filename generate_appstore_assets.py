@@ -531,23 +531,19 @@ def add_teleprompter_overlay(screen, video_bottom, lang, clip):
     """Overlay a teleprompter UI centred at the vertical midpoint."""
     w, h = screen.size
 
-    # Gradient overlay centred around the midpoint
-    overlay_top = int(h * 0.28)
-    overlay_h = h - overlay_top
+    # Full-screen Gaussian overlay — peaks at vertical midpoint, no hard edges
+    import math
+    center = 0.50          # peak at screen midpoint
+    sigma = 0.22           # controls how wide the darkening spreads
+    peak_alpha = 130       # max darkness at center
 
-    col = Image.new("RGBA", (1, overlay_h))
-    for y in range(overlay_h):
-        t = y / max(overlay_h - 1, 1)
-        # Bell-shaped alpha: peaks around the midpoint area then fades again
-        mid = 0.35  # relative midpoint within the overlay
-        dist = abs(t - mid) / max(mid, 1 - mid)
-        alpha = int(140 * max(0, 1 - dist * 1.1) ** 0.7)
+    col = Image.new("RGBA", (1, h))
+    for y in range(h):
+        t = y / max(h - 1, 1)
+        alpha = int(peak_alpha * math.exp(-0.5 * ((t - center) / sigma) ** 2))
         col.putpixel((0, y), (0, 0, 0, alpha))
-    overlay = col.resize((w, overlay_h), Image.NEAREST)
-
-    olayer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    olayer.paste(overlay, (0, overlay_top))
-    screen = Image.alpha_composite(screen, olayer)
+    overlay = col.resize((w, h), Image.NEAREST)
+    screen = Image.alpha_composite(screen, overlay)
 
     draw = ImageDraw.Draw(screen)
     lines = PROMPTER_TEXT[clip][lang]
