@@ -97,8 +97,10 @@ def normalize_clip(input_path, output_path, target_w, target_h):
         # Force square pixels — FFMPEG can produce fractional SAR (e.g. 886:885)
         # which causes App Store Connect to reject with "wrong dimensions"
         f"setsar=1:1,"
-        # Force color space for Apple compatibility
-        f"colorspace=all=bt709,"
+        # Tag color space metadata for Apple compatibility
+        # (use setparams instead of colorspace filter — the colorspace filter
+        # requires known input primaries and fails on videos with 'unknown' primaries)
+        f"setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709,"
         f"format=yuv420p"
     )
 
