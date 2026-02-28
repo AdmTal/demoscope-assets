@@ -66,7 +66,7 @@ DEVICES = {
 # of each individual clip before concatenating.
 # Set to None to use full clips.
 # ─────────────────────────────────────────────
-SAVE_LAST_SECONDS = 3.5
+SAVE_LAST_SECONDS = 3.25
 
 # ─────────────────────────────────────────────
 # ENCODING SETTINGS (Apple App Preview specs)
