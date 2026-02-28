@@ -19,7 +19,6 @@ import os
 import sys
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-
 # ─────────────────────────────────────────────
 # PATHS
 # ─────────────────────────────────────────────
@@ -29,59 +28,54 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "AppStoreAssets")
 
 CLIPS = ["woman_1", "man_1", "woman_2", "man_2"]
 
-
 # ─────────────────────────────────────────────
 # FRAME TIMESTAMPS  (min:sec to grab from each video)
 # ─────────────────────────────────────────────
 FRAME_TIMESTAMPS = {
     "woman_1": "0:01",
-    "man_1":   "0:01",
+    "man_1": "0:01",
     "woman_2": "0:01",
-    "man_2":   "0:01",
+    "man_2": "0:01",
 }
-
 
 # ─────────────────────────────────────────────
 # APP STORE SCREENSHOT SIZES
 # ─────────────────────────────────────────────
-IPHONE_SIZE = (1284, 2778)    # 6.7" portrait
-IPAD_SIZE   = (2064, 2752)    # 12.9" 6th gen portrait
-
+IPHONE_SIZE = (1284, 2778)  # 6.7" portrait
+IPAD_SIZE = (2064, 2752)  # 12.9" 6th gen portrait
 
 # ─────────────────────────────────────────────
 # PHONE MOCKUP
 # ─────────────────────────────────────────────
-PHONE_ASPECT = 2.076               # height / width (iPhone 15 Pro)
-PHONE_BODY_COLOR = (28, 28, 30)    # Space black
-PHONE_BODY_RADIUS_PCT = 0.14       # Corner radius as % of phone width
-PHONE_BEZEL_PCT = 0.022            # Bezel as % of phone width
-PHONE_ISLAND_W_PCT = 0.30          # Dynamic island width as % of screen
-PHONE_ISLAND_H_PCT = 0.014         # Dynamic island height as % of screen
-PHONE_BORDER_PCT = 0.014           # Colored border as % of phone width
-
+PHONE_ASPECT = 2.076  # height / width (iPhone 15 Pro)
+PHONE_BODY_COLOR = (28, 28, 30)  # Space black
+PHONE_BODY_RADIUS_PCT = 0.14  # Corner radius as % of phone width
+PHONE_BEZEL_PCT = 0.022  # Bezel as % of phone width
+PHONE_ISLAND_W_PCT = 0.30  # Dynamic island width as % of screen
+PHONE_ISLAND_H_PCT = 0.014  # Dynamic island height as % of screen
+PHONE_BORDER_PCT = 0.014  # Colored border as % of phone width
 
 # ─────────────────────────────────────────────
 # VISUAL DESIGN
 # ─────────────────────────────────────────────
 BG_GRADIENTS = {
-    "woman_1": ((255, 107, 107), (255, 160, 137)),   # Coral
-    "man_1":   ((46, 196, 182),  (86, 227, 215)),    # Teal
-    "woman_2": ((139, 92, 246),  (178, 147, 255)),    # Violet
-    "man_2":   ((245, 158, 11),  (252, 196, 55)),     # Amber
+    "woman_1": ((255, 107, 107), (255, 160, 137)),  # Coral
+    "man_1": ((46, 196, 182), (86, 227, 215)),  # Teal
+    "woman_2": ((139, 92, 246), (178, 147, 255)),  # Violet
+    "man_2": ((245, 158, 11), (252, 196, 55)),  # Amber
 }
 
-LABEL_BLOCK_COLOR = (0, 0, 0, 210)   # Dark label behind headline text
+LABEL_BLOCK_COLOR = (0, 0, 0, 210)  # Dark label behind headline text
 TEXT_COLOR = (255, 255, 255, 255)
 TEXT_SHADOW = (0, 0, 0, 90)
-
 
 # ─────────────────────────────────────────────
 # FONTS
 # ─────────────────────────────────────────────
-LATIN_FONT = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+# LATIN_FONT = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+LATIN_FONT = "/System/Library/Fonts/HelveticaNeue.ttc"
 CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
 CJK_INDICES = {}
-
 
 # ─────────────────────────────────────────────
 # LOCALIZED MARKETING COPY
@@ -168,7 +162,6 @@ COPY = {
          "Mostre o melhor de si, sempre"),
     ],
 }
-
 
 # ─────────────────────────────────────────────
 # TELEPROMPTER SAMPLE TEXT  (per-clip, per-language)
@@ -347,7 +340,6 @@ PROMPTER_TEXT = {
         ],
     },
 }
-
 
 LANGUAGES = list(COPY.keys())
 
@@ -533,9 +525,9 @@ def add_teleprompter_overlay(screen, video_bottom, lang, clip):
 
     # Full-screen Gaussian overlay — peaks at vertical midpoint, no hard edges
     import math
-    center = 0.50          # peak at screen midpoint
-    sigma = 0.22           # controls how wide the darkening spreads
-    peak_alpha = 130       # max darkness at center
+    center = 0.50  # peak at screen midpoint
+    sigma = 0.22  # controls how wide the darkening spreads
+    peak_alpha = 130  # max darkness at center
 
     col = Image.new("RGBA", (1, h))
     for y in range(h):
