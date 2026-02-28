@@ -505,15 +505,20 @@ def draw_text_with_shadow(canvas, pos, text, font,
 # ─────────────────────────────────────────────
 
 def create_screen_content(video_frame, screen_w, screen_h, lang, clip):
-    """Build screen content: video scaled to width + teleprompter overlay below."""
-    scale = screen_w / video_frame.width
-    vid_w = screen_w
+    """Build screen content: video scaled to cover screen + teleprompter overlay."""
+    scale_w = screen_w / video_frame.width
+    scale_h = screen_h / video_frame.height
+    scale = max(scale_w, scale_h)
+
+    vid_w = int(video_frame.width * scale)
     vid_h = int(video_frame.height * scale)
 
     scaled = video_frame.resize((vid_w, vid_h), Image.LANCZOS)
 
-    screen = Image.new("RGBA", (screen_w, screen_h), (0, 0, 0, 255))
-    screen.paste(scaled.convert("RGBA"), (0, 0))
+    # Centre-crop to screen dimensions so no black bars remain
+    left = (vid_w - screen_w) // 2
+    top = (vid_h - screen_h) // 2
+    screen = scaled.crop((left, top, left + screen_w, top + screen_h)).convert("RGBA")
 
     screen = add_teleprompter_overlay(screen, vid_h, lang, clip)
     return screen
