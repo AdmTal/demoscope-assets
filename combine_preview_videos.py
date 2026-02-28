@@ -62,6 +62,13 @@ DEVICES = {
 }
 
 # ─────────────────────────────────────────────
+# CLIP TRIMMING — Keep only the last X seconds
+# of each individual clip before concatenating.
+# Set to None to use full clips.
+# ─────────────────────────────────────────────
+SAVE_LAST_SECONDS = 3.5
+
+# ─────────────────────────────────────────────
 # ENCODING SETTINGS (Apple App Preview specs)
 # ─────────────────────────────────────────────
 FPS = 30
@@ -104,8 +111,11 @@ def normalize_clip(input_path, output_path, target_w, target_h):
         f"format=yuv420p"
     )
 
-    cmd = [
-        "ffmpeg", "-y",
+    cmd = ["ffmpeg", "-y"]
+    # Trim to last N seconds of each clip if configured
+    if SAVE_LAST_SECONDS is not None:
+        cmd += ["-sseof", str(-abs(SAVE_LAST_SECONDS))]
+    cmd += [
         # Input video
         "-i", input_path,
         # Generate silent audio (anullsrc) — Apple requires an audio track
