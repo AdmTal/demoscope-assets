@@ -461,7 +461,8 @@ def _detect_macos_cjk():
 
 
 def _detect_linux_cjk():
-    """Detect CJK fonts on Linux using Noto Sans CJK."""
+    """Detect CJK fonts on Linux using Noto Sans CJK with fallbacks."""
+    # ── Primary: Noto Sans CJK (has distinct SC / TC / JP / KR variants) ──
     cjk_path = None
     for path in [
         "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
@@ -471,24 +472,66 @@ def _detect_linux_cjk():
             cjk_path = path
             break
 
-    if cjk_path is None:
-        print("  WARNING: NotoSansCJK-Bold.ttc not found. CJK text may not render.")
-        return
+    if cjk_path is not None:
+        lang_map = {"JP": "ja", "KR": "ko", "SC": "zh-Hans", "TC": "zh-Hant"}
+        for i in range(30):
+            try:
+                font = ImageFont.truetype(cjk_path, 20, index=i)
+                family = font.getname()[0]
+                if "Mono" in family:
+                    continue
+                for code, lang_key in lang_map.items():
+                    if code in family and lang_key not in _LANG_CJK_FONTS:
+                        _LANG_CJK_FONTS[lang_key] = (cjk_path, i)
+            except (OSError, IOError):
+                break
+        print(f"  CJK font: {cjk_path}")
+        print(f"  CJK languages detected: {list(_LANG_CJK_FONTS.keys())}")
 
-    lang_map = {"JP": "ja", "KR": "ko", "SC": "zh-Hans", "TC": "zh-Hant"}
-    for i in range(30):
-        try:
-            font = ImageFont.truetype(cjk_path, 20, index=i)
-            family = font.getname()[0]
-            if "Mono" in family:
-                continue
-            for code, lang_key in lang_map.items():
-                if code in family and lang_key not in _LANG_CJK_FONTS:
-                    _LANG_CJK_FONTS[lang_key] = (cjk_path, i)
-        except (OSError, IOError):
-            break
-    print(f"  CJK font: {cjk_path}")
-    print(f"  CJK languages detected: {list(_LANG_CJK_FONTS.keys())}")
+    # ── Fallback: fill any CJK languages still missing ──
+
+    # Chinese (zh-Hans / zh-Hant) — WenQuanYi Zen Hei covers both
+    if "zh-Hans" not in _LANG_CJK_FONTS or "zh-Hant" not in _LANG_CJK_FONTS:
+        for path in [
+            "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+            "/usr/share/fonts/truetype/arphic/uming.ttc",
+        ]:
+            if os.path.exists(path):
+                idx = _find_ttc_index(path, bold=True)
+                if "zh-Hans" not in _LANG_CJK_FONTS:
+                    _LANG_CJK_FONTS["zh-Hans"] = (path, idx)
+                if "zh-Hant" not in _LANG_CJK_FONTS:
+                    _LANG_CJK_FONTS["zh-Hant"] = (path, idx)
+                print(f"  Chinese fallback font: {os.path.basename(path)} (index {idx})")
+                break
+
+    # Japanese — IPA Gothic, then WenQuanYi as last resort
+    if "ja" not in _LANG_CJK_FONTS:
+        for path in [
+            "/usr/share/fonts/opentype/ipafont-gothic/ipagp.ttf",
+            "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf",
+            "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+        ]:
+            if os.path.exists(path):
+                idx = _find_ttc_index(path, bold=True) if path.endswith(".ttc") else 0
+                _LANG_CJK_FONTS["ja"] = (path, idx)
+                print(f"  Japanese fallback font: {os.path.basename(path)} (index {idx})")
+                break
+
+    # Korean — WenQuanYi has Korean coverage
+    if "ko" not in _LANG_CJK_FONTS:
+        for path in [
+            "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
+        ]:
+            if os.path.exists(path):
+                idx = _find_ttc_index(path, bold=True)
+                _LANG_CJK_FONTS["ko"] = (path, idx)
+                print(f"  Korean fallback font: {os.path.basename(path)} (index {idx})")
+                break
+
+    missing = [l for l in ["ja", "ko", "zh-Hans", "zh-Hant"] if l not in _LANG_CJK_FONTS]
+    if missing:
+        print(f"  WARNING: No fonts found for: {missing}. CJK text may not render.")
 
 
 def extract_frame(video_path, timestamp="0:00"):
