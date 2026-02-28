@@ -94,6 +94,9 @@ def normalize_clip(input_path, output_path, target_w, target_h):
         # Scale to cover target, then crop to exact size
         f"scale={target_w}:{target_h}:force_original_aspect_ratio=increase,"
         f"crop={target_w}:{target_h},"
+        # Force square pixels — FFMPEG can produce fractional SAR (e.g. 886:885)
+        # which causes App Store Connect to reject with "wrong dimensions"
+        f"setsar=1:1,"
         # Force color space for Apple compatibility
         f"colorspace=all=bt709,"
         f"format=yuv420p"
@@ -116,6 +119,10 @@ def normalize_clip(input_path, output_path, target_w, target_h):
         "-r", str(FPS),
         "-vsync", "cfr",
         "-pix_fmt", "yuv420p",
+        "-color_range", "tv",
+        "-colorspace", "bt709",
+        "-color_primaries", "bt709",
+        "-color_trc", "bt709",
         "-vf", video_filter,
         # Audio encoding (from the silent source)
         "-c:a", "aac",
@@ -161,6 +168,10 @@ def concatenate_clips(clip_paths, output_path):
         "-r", str(FPS),
         "-vsync", "cfr",
         "-pix_fmt", "yuv420p",
+        "-color_range", "tv",
+        "-colorspace", "bt709",
+        "-color_primaries", "bt709",
+        "-color_trc", "bt709",
         "-c:a", "aac",
         "-b:a", AUDIO_BITRATE,
         "-ar", str(AUDIO_SAMPLE_RATE),
