@@ -17,6 +17,7 @@ Output:
 import subprocess
 import os
 import sys
+import platform
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 # ─────────────────────────────────────────────
@@ -70,12 +71,11 @@ TEXT_COLOR = (255, 255, 255, 255)
 TEXT_SHADOW = (0, 0, 0, 90)
 
 # ─────────────────────────────────────────────
-# FONTS
+# FONTS  (auto-detected per platform in detect_fonts())
 # ─────────────────────────────────────────────
-# LATIN_FONT = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
-LATIN_FONT = "/System/Library/Fonts/HelveticaNeue.ttc"
-CJK_FONT = "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"
-CJK_INDICES = {}
+LATIN_FONT = None
+LATIN_FONT_INDEX = 0
+_LANG_CJK_FONTS = {}  # lang -> (font_path, font_index)
 
 # ─────────────────────────────────────────────
 # LOCALIZED MARKETING COPY
@@ -348,22 +348,147 @@ LANGUAGES = list(COPY.keys())
 # HELPERS
 # ─────────────────────────────────────────────
 
-def detect_cjk_indices():
-    """Auto-detect CJK font variant indices in the .ttc file."""
-    global CJK_INDICES
+def _find_ttc_index(ttc_path, bold=True, name_contains=None):
+    """Return the index of a matching variant inside a .ttc font collection.
+
+    Prefers Bold / Semibold weight when *bold* is True.
+    Optionally filters variants whose family name contains *name_contains*.
+    Returns 0 as fallback.
+    """
+    best, best_score = 0, -1
+    for i in range(50):
+        try:
+            f = ImageFont.truetype(ttc_path, 20, index=i)
+        except (OSError, IOError):
+            break
+        family, style = f.getname()
+        if name_contains and name_contains not in family:
+            continue
+        score = 0
+        if bold:
+            if "Bold" in style:
+                score += 10
+            elif "Semibold" in style or "SemiBold" in style or "Demi" in style:
+                score += 8
+            elif "W7" in family:
+                score += 9
+            elif "W6" in family:
+                score += 7
+            elif "Medium" in style:
+                score += 5
+        if "Mono" in family:
+            score -= 20
+        if score > best_score:
+            best_score = score
+            best = i
+    return best
+
+
+def detect_fonts():
+    """Set up font paths and indices for the current platform."""
+    global LATIN_FONT, LATIN_FONT_INDEX
+
+    is_macos = platform.system() == "Darwin"
+
+    # ── Latin font ──────────────────────────────
+    if is_macos:
+        for path in [
+            "/System/Library/Fonts/HelveticaNeue.ttc",
+            "/System/Library/Fonts/Helvetica.ttc",
+        ]:
+            if os.path.exists(path):
+                LATIN_FONT = path
+                LATIN_FONT_INDEX = _find_ttc_index(path, bold=True)
+                break
+        if LATIN_FONT is None:
+            sys.exit("ERROR: No Helvetica font found on macOS.")
+    else:
+        for path in [
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ]:
+            if os.path.exists(path):
+                LATIN_FONT = path
+                LATIN_FONT_INDEX = 0
+                break
+        if LATIN_FONT is None:
+            LATIN_FONT = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+            LATIN_FONT_INDEX = 0
+
+    print(f"  Latin font: {LATIN_FONT} (index {LATIN_FONT_INDEX})")
+
+    # ── CJK fonts ───────────────────────────────
+    if is_macos:
+        _detect_macos_cjk()
+    else:
+        _detect_linux_cjk()
+
+
+def _detect_macos_cjk():
+    """Detect CJK fonts on macOS using built-in system fonts."""
+    # Japanese — Hiragino Sans (W6 = SemiBold, W7 = Bold)
+    for path in [
+        "/System/Library/Fonts/\u30d2\u30e9\u30ae\u30ce\u89d2\u30b4\u30b7\u30c3\u30af W6.ttc",
+        "/System/Library/Fonts/\u30d2\u30e9\u30ae\u30ce\u89d2\u30b4\u30b7\u30c3\u30af W7.ttc",
+        "/System/Library/Fonts/\u30d2\u30e9\u30ae\u30ce\u89d2\u30b4\u30b7\u30c3\u30af W3.ttc",
+    ]:
+        if os.path.exists(path):
+            idx = _find_ttc_index(path, bold=True)
+            _LANG_CJK_FONTS["ja"] = (path, idx)
+            print(f"  Japanese font: {os.path.basename(path)} (index {idx})")
+            break
+
+    # Korean — Apple SD Gothic Neo
+    ko_path = "/System/Library/Fonts/AppleSDGothicNeo.ttc"
+    if os.path.exists(ko_path):
+        idx = _find_ttc_index(ko_path, bold=True)
+        _LANG_CJK_FONTS["ko"] = (ko_path, idx)
+        print(f"  Korean font: AppleSDGothicNeo.ttc (index {idx})")
+
+    # Chinese — PingFang SC / TC
+    pf_path = "/System/Library/Fonts/PingFang.ttc"
+    if os.path.exists(pf_path):
+        sc_idx = _find_ttc_index(pf_path, bold=True, name_contains="SC")
+        tc_idx = _find_ttc_index(pf_path, bold=True, name_contains="TC")
+        _LANG_CJK_FONTS["zh-Hans"] = (pf_path, sc_idx)
+        _LANG_CJK_FONTS["zh-Hant"] = (pf_path, tc_idx)
+        print(f"  Chinese SC font: PingFang.ttc (index {sc_idx})")
+        print(f"  Chinese TC font: PingFang.ttc (index {tc_idx})")
+
+    if not _LANG_CJK_FONTS:
+        print("  WARNING: No CJK system fonts found on macOS.")
+        print("  CJK text (Japanese, Korean, Chinese) may not render correctly.")
+
+
+def _detect_linux_cjk():
+    """Detect CJK fonts on Linux using Noto Sans CJK."""
+    cjk_path = None
+    for path in [
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+        "/usr/share/fonts/noto-cjk/NotoSansCJK-Bold.ttc",
+    ]:
+        if os.path.exists(path):
+            cjk_path = path
+            break
+
+    if cjk_path is None:
+        print("  WARNING: NotoSansCJK-Bold.ttc not found. CJK text may not render.")
+        return
+
     lang_map = {"JP": "ja", "KR": "ko", "SC": "zh-Hans", "TC": "zh-Hant"}
     for i in range(30):
         try:
-            font = ImageFont.truetype(CJK_FONT, 20, index=i)
+            font = ImageFont.truetype(cjk_path, 20, index=i)
             family = font.getname()[0]
             if "Mono" in family:
                 continue
             for code, lang_key in lang_map.items():
-                if code in family and lang_key not in CJK_INDICES:
-                    CJK_INDICES[lang_key] = i
+                if code in family and lang_key not in _LANG_CJK_FONTS:
+                    _LANG_CJK_FONTS[lang_key] = (cjk_path, i)
         except (OSError, IOError):
             break
-    print(f"  CJK font indices detected: {CJK_INDICES}")
+    print(f"  CJK font: {cjk_path}")
+    print(f"  CJK languages detected: {list(_LANG_CJK_FONTS.keys())}")
 
 
 def extract_frame(video_path, timestamp="0:00"):
@@ -406,9 +531,10 @@ def round_corners(img, radius):
 
 def get_font(lang, size):
     """Return the correct bold font for a language."""
-    if lang in CJK_INDICES:
-        return ImageFont.truetype(CJK_FONT, size, index=CJK_INDICES[lang])
-    return ImageFont.truetype(LATIN_FONT, size)
+    if lang in _LANG_CJK_FONTS:
+        path, idx = _LANG_CJK_FONTS[lang]
+        return ImageFont.truetype(path, size, index=idx)
+    return ImageFont.truetype(LATIN_FONT, size, index=LATIN_FONT_INDEX)
 
 
 def composite_with_shadow(canvas, img, pos, offset=10, blur=20, opacity=60):
@@ -718,7 +844,7 @@ def main():
     print("DemoScope App Store Asset Generator")
     print("=" * 50)
 
-    detect_cjk_indices()
+    detect_fonts()
 
     # Extract frames
     print("\n[1/3] Extracting frames from portrait videos...")
