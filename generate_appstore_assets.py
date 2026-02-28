@@ -682,8 +682,8 @@ def make_card(frame, cw, ch, clip, lang, clip_idx):
     content_bottom = sub_bb[3] + int(ch * 0.018)
 
     # 4. Phone dimensions — wide, bleeds off bottom by ~25%
-    #    Width: 92% of card (capped at 45% of card height for iPad)
-    phone_w = int(min(cw * 0.92, ch * 0.45))
+    #    Width: 85% of card (capped at 45% of card height for iPad)
+    phone_w = int(min(cw * 0.88, ch * 0.45))
     phone_h = int(phone_w * PHONE_ASPECT)
 
     bezel = max(int(phone_w * PHONE_BEZEL_PCT), 4)
