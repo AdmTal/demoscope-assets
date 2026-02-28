@@ -161,6 +161,16 @@ COPY = {
         ("Presença Executiva\nSem Esforço",
          "Mostre o melhor de si, sempre"),
     ],
+    "es-ES": [
+        ("Clava Cada\nToma",
+         "Teleprónter profesional en tus manos"),
+        ("Habla Con\nConfianza",
+         "Lee tu guion con naturalidad ante la cámara"),
+        ("Habla Como\nun Profesional",
+         "Herramientas profesionales en tu bolsillo"),
+        ("Presencia Ejecutiva\nSin Esfuerzo",
+         "Da lo mejor de ti, siempre"),
+    ],
 }
 
 # ─────────────────────────────────────────────
@@ -212,6 +222,11 @@ PROMPTER_TEXT = {
             "importa mais do que nunca. Vou",
             "compartilhar três estratégias de crescimento…",
         ],
+        "es-ES": [
+            "y por eso una identidad de marca sólida",
+            "importa más que nunca. Dejadme",
+            "compartir mis tres estrategias de crecimiento…",
+        ],
     },
     "man_1": {
         "en-US": [
@@ -253,6 +268,11 @@ PROMPTER_TEXT = {
             "a chave para um ensino eficaz é",
             "dividir conceitos em etapas menores.",
             "Vamos ver um exemplo prático…",
+        ],
+        "es-ES": [
+            "la clave de un diseño de clase eficaz",
+            "es dividir los conceptos en pasos más pequeños.",
+            "Veamos un ejemplo concreto…",
         ],
     },
     "woman_2": {
@@ -296,6 +316,11 @@ PROMPTER_TEXT = {
             "ativado e os ombros para trás.",
             "Vamos para a próxima série…",
         ],
+        "es-ES": [
+            "la postura lo es todo. Mantened el core",
+            "activado y los hombros hacia atrás. Ahora",
+            "vamos con la siguiente serie de repeticiones…",
+        ],
     },
     "man_2": {
         "en-US": [
@@ -337,6 +362,11 @@ PROMPTER_TEXT = {
             "e é isso que torna este chip tão rápido.",
             "Mas a verdadeira pergunta é se",
             "o preço se justifica. Vamos analisar…",
+        ],
+        "es-ES": [
+            "y eso es lo que hace este chip tan rápido.",
+            "Pero la verdadera pregunta es si",
+            "justifica el precio. Vamos a averiguarlo…",
         ],
     },
 }
