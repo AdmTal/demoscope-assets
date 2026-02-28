@@ -42,7 +42,7 @@ FRAME_TIMESTAMPS = {
 # ─────────────────────────────────────────────
 # APP STORE SCREENSHOT SIZES
 # ─────────────────────────────────────────────
-IPHONE_SIZE = (1284, 2778)  # 6.7" portrait
+IPHONE_SIZE = (1260, 2736)  # 6.7" portrait
 IPAD_SIZE = (2064, 2752)  # 12.9" 6th gen portrait
 
 # ─────────────────────────────────────────────
