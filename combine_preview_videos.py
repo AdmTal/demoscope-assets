@@ -78,6 +78,13 @@ AUDIO_SAMPLE_RATE = 48000
 H264_PROFILE = "high"
 H264_LEVEL = "4.0"
 
+# ─────────────────────────────────────────────
+# MUSIC — Layered on top of the final video,
+# clipped to the video's duration.
+# Set to None to keep silent audio.
+# ─────────────────────────────────────────────
+MUSIC_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "music.mp3")
+
 
 def get_input_path(device_cfg, clip_name):
     """Build the input file path for a clip.
@@ -214,6 +221,42 @@ def get_duration(filepath):
     return float(result.stdout.strip())
 
 
+def add_music(video_path):
+    """Replace the silent audio track with music.mp3, clipped to the video length."""
+    if MUSIC_PATH is None or not os.path.exists(MUSIC_PATH):
+        print(f"  Skipping music — {MUSIC_PATH} not found")
+        return
+
+    tmp_output = video_path + ".music.mp4"
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", video_path,
+        "-i", MUSIC_PATH,
+        # Copy video stream as-is (already encoded to spec)
+        "-c:v", "copy",
+        # Re-encode audio from music file
+        "-c:a", "aac",
+        "-b:a", AUDIO_BITRATE,
+        "-ar", str(AUDIO_SAMPLE_RATE),
+        "-ac", "2",
+        # Take video from input 0, audio from input 1
+        "-map", "0:v:0",
+        "-map", "1:a:0",
+        # End when the video ends (don't extend for longer music)
+        "-shortest",
+        "-movflags", "+faststart",
+        tmp_output,
+    ]
+
+    print(f"  Adding music: {os.path.basename(MUSIC_PATH)}")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(f"  ERROR adding music:\n{result.stderr[-2000:]}")
+        raise RuntimeError("Failed to add music")
+
+    os.replace(tmp_output, video_path)
+
+
 def process_device(device_name, device_cfg):
     """Process all clips for a single device type."""
     target_w = device_cfg["width"]
@@ -259,7 +302,10 @@ def process_device(device_name, device_cfg):
         # Step 2: Concatenate
         concatenate_clips(normalized, output_path)
 
-    # Step 3: Validate duration
+    # Step 3: Layer music on top (clipped to video length)
+    add_music(output_path)
+
+    # Step 4: Validate duration
     duration = get_duration(output_path)
     if duration is not None:
         print(f"\n  Duration: {duration:.1f}s", end="")
